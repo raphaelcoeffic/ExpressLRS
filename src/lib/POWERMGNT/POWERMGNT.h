@@ -54,6 +54,11 @@
 #define DefaultPowerEnum 2
 #endif
 
+#ifdef TARGET_TX_RADIOMASTER_LR_v0_1
+#define MaxPower 2
+#define DefaultPowerEnum 2
+#endif
+
 typedef enum
 {
     PWR_10mW = 0,

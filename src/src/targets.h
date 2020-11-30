@@ -344,6 +344,22 @@ https://github.com/jaxxzer
 #define timerOffset          1
 #endif /* TARGET_SX1280_RX_CCG_NANO_v05 */
 
+#if defined(TARGET_TX_RADIOMASTER_LR_v0_1)
+#define GPIO_PIN_NSS            PB6
+#define GPIO_PIN_BUSY           PC13
+#define GPIO_PIN_RST            PC14
+#define GPIO_PIN_DIO0           -1 // does not exist on sx1280
+#define GPIO_PIN_DIO1           PB7
+#define GPIO_PIN_MOSI           PB5
+#define GPIO_PIN_MISO           PB4
+#define GPIO_PIN_SCK            PB3
+#define GPIO_PIN_RCSIGNAL_RX    PB11 // USART3, half duplex
+#define GPIO_PIN_RCSIGNAL_TX    PB10 // USART3, half duplex
+#define GPIO_PIN_BUTTON         PA5
+#define GPIO_PIN_LED_RED        PA6
+#define GPIO_PIN_LED_GREEN      PA4
+#endif /* TARGET_TX_RADIOMASTER_LR_v0_1 */
+
 #ifdef GPIO_PIN_LED_WS2812
 #ifndef GPIO_PIN_LED_WS2812_FAST
 #error "WS2812 support requires _FAST pin!"

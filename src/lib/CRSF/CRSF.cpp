@@ -15,9 +15,10 @@ TaskHandle_t xESP32uartWDT = NULL;
 SemaphoreHandle_t mutexOutFIFO = NULL;
 #endif
 
-#if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1)
+#if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1) \
+    || defined(TARGET_RADIOMASTER_LR_v0_1)
 HardwareSerial CRSF::Port(USART3);
-#if defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1)
+#if defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1) || defined(TARGET_RADIOMASTER_LR_v0_1)
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_hal_gpio.h"
 #else
@@ -175,7 +176,8 @@ void ICACHE_RAM_ATTR CRSF::setSentSwitch(uint8_t index, uint8_t value)
     sentSwitches[index] = value;
 }
 
-#if defined(PLATFORM_ESP32) || defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX)
+#if defined(PLATFORM_ESP32) || defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) \
+    || defined(TARGET_TX_RADIOMASTER_LR_v0_1)
 void ICACHE_RAM_ATTR CRSF::sendLinkStatisticsToTX()
 {
     uint8_t outBuffer[LinkStatisticsFrameLength + 4] = {0};

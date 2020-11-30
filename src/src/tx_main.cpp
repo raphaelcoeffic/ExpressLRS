@@ -537,7 +537,7 @@ void setup()
   Serial.begin(115200);
 #endif
 
-#if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1)
+#if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1) || defined(TARGET_TX_RADIOMASTER_LR_v0_1)
 
     pinMode(GPIO_PIN_LED_GREEN, OUTPUT);
     pinMode(GPIO_PIN_LED_RED, OUTPUT);
@@ -547,9 +547,9 @@ void setup()
     HardwareSerial(USART1);
     Serial.begin(460800);
 #else
-    HardwareSerial(USART2);
-    Serial.setTx(PA2);
-    Serial.setRx(PA3);
+    HardwareSerial(USART3, HALF_DUPLEX_ENABLED);
+    Serial.setTx(GPIO_PIN_RCSIGNAL_TX);
+    Serial.setRx(GPIO_PIN_RCSIGNAL_RX);
     Serial.begin(400000);
 #endif
     
@@ -621,9 +621,10 @@ void setup()
   #if !(defined(TARGET_TX_ESP32_E28_SX1280_V1) || defined(TARGET_TX_ESP32_SX1280_V1) || defined(TARGET_RX_ESP8266_SX1280_V1) || defined(Regulatory_Domain_ISM_2400))
   Radio.currSyncWord = UID[3];
   #endif
-  bool init_success = Radio.Begin();
+  bool init_success = false;
   while (!init_success)
   {
+    init_success = Radio.Begin();
     #if defined(TARGET_R9M_TX)
     digitalWrite(GPIO_PIN_LED_GREEN, LOW);
     tone(GPIO_PIN_BUZZER, 480, 200);
@@ -692,19 +693,19 @@ void loop()
   if (millis() > (RX_CONNECTION_LOST_TIMEOUT + LastTLMpacketRecvMillis))
   {
     connectionState = disconnected;
-    #if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1)
+    #if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1) || defined(TARGET_TX_RADIOMASTER_v0_1)
     digitalWrite(GPIO_PIN_LED_RED, LOW);
     #endif
   }
   else
   {
     connectionState = connected;
-    #if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1)
+    #if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1) || defined(TARGET_TX_RADIOMASTER_v0_1)
     digitalWrite(GPIO_PIN_LED_RED, HIGH);
     #endif
   }
 
-#if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1)
+#if defined(TARGET_R9M_TX) || defined(TARGET_R9M_LITE_TX) || defined(TARGET_R9M_LITE_PRO_TX) || defined(TARGET_RX_GHOST_ATTO_V1) || defined(TARGET_TX_RADIOMASTER_v0_1)
   crsf.STM32handleUARTin();
   #ifdef FEATURE_OPENTX_SYNC
   crsf.sendSyncPacketToTX();

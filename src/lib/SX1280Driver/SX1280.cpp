@@ -58,6 +58,7 @@ bool SX1280Driver::Begin()
     if ((firmwareRev == 0) || (firmwareRev == 65536))
     {
         // SPI communication failed, just return without configuration
+        Serial.println("SPI communication failed");
         return false;
     }
 
