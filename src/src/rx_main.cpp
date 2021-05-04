@@ -20,6 +20,7 @@ SX1280Driver Radio;
 
 #include "crc.h"
 #include "CRSF.h"
+#include "sbus.h"
 #include "telemetry_protocol.h"
 #include "telemetry.h"
 #ifdef ENABLE_TELEMETRY
@@ -38,6 +39,24 @@ SX1280Driver Radio;
 #include "elrs_eeprom.h"
 #include "config.h"
 #include "POWERMGNT.h"
+
+
+#if !defined(USE_SBUS)
+
+#define RX_BAUDRATE CRSF_RX_BAUDRATE
+#define RX_SERIAL_CONFIG SERIAL_8N1
+
+RXModule* rxMod = &crsfRx;
+
+#else
+
+#define RX_BAUDRATE 100000
+#define RX_SERIAL_CONFIG SERIAL_8E2
+
+RXModule* rxMod = &sbusRxModule;
+
+#endif
+
 
 #ifdef TARGET_RX_GHOST_ATTO_V1
 uint8_t LEDfadeDiv;
@@ -220,7 +239,7 @@ void ICACHE_RAM_ATTR getRFlinkInfo()
     channels.LinkStatistics.uplink_SNR = Radio.LastPacketSNR;
     channels.LinkStatistics.uplink_Link_quality = uplinkLQ;
     channels.LinkStatistics.rf_Mode = (uint8_t)RATE_4HZ - (uint8_t)ExpressLRS_currAirRate_Modparams->enum_rate;
-    //Serial.println(crsfRx.LinkStatistics.uplink_RSSI_1);
+    //Serial.println(rxMod->LinkStatistics.uplink_RSSI_1);
 }
 
 void SetRFLinkRate(uint8_t index) // Set speed of RF link (hz)
@@ -694,7 +713,7 @@ void ICACHE_RAM_ATTR ProcessRFPacket()
         TelemetrySender.ConfirmCurrentPayload(telemetryConfirmValue);
 #endif
         if (connectionState != disconnected) {
-          crsfRx.sendRCFrameToFC(&channels);
+          rxMod->sendRCFrameToFC(&channels);
         }
       }
       break;
@@ -714,7 +733,7 @@ void ICACHE_RAM_ATTR ProcessRFPacket()
         }
         else if (MspReceiver.HasFinishedData())
         {
-            crsfRx.sendMSPFrameToFC(MspData);
+            rxMod->sendMSPFrameToFC(MspData);
             MspReceiver.Unlock();
         }
         break;
@@ -852,7 +871,7 @@ static void setupSerial()
 #ifdef PLATFORM_STM32
 #if defined(TARGET_R9SLIMPLUS_RX)
     CRSF_RX_SERIAL.setRx(GPIO_PIN_RCSIGNAL_RX);
-    CRSF_RX_SERIAL.begin(CRSF_RX_BAUDRATE);
+    CRSF_RX_SERIAL.begin(RX_BAUDRATE);
 
     TX_SERIAL.setTx(GPIO_PIN_RCSIGNAL_TX);
 #else /* !TARGET_R9SLIMPLUS_RX */
@@ -863,7 +882,7 @@ static void setupSerial()
     // USART1 is used for RX (half duplex)
     CRSF_RX_SERIAL.setHalfDuplex();
     CRSF_RX_SERIAL.setTx(GPIO_PIN_RCSIGNAL_RX);
-    CRSF_RX_SERIAL.begin(CRSF_RX_BAUDRATE);
+    CRSF_RX_SERIAL.begin(RX_BAUDRATE);
     CRSF_RX_SERIAL.enableHalfDuplexRx();
 
     // USART2 is used for TX (half duplex)
@@ -872,17 +891,17 @@ static void setupSerial()
     TX_SERIAL.setRx((PinName)NC);
     TX_SERIAL.setTx(GPIO_PIN_RCSIGNAL_TX);
 #endif /* TARGET_RX_GHOST_ATTO_V1 */
-    TX_SERIAL.begin(CRSF_RX_BAUDRATE);
+    TX_SERIAL.begin(RX_BAUDRATE); //TODO: possibly something different
 #endif /* PLATFORM_STM32 */
 
 #if defined(TARGET_RX_FM30_MINI)
     Serial.setRx(GPIO_PIN_DEBUG_RX);
     Serial.setTx(GPIO_PIN_DEBUG_TX);
-    Serial.begin(CRSF_RX_BAUDRATE); // Same baud as CRSF for simplicity
+    Serial.begin(RX_BAUDRATE); // Same baud as CRSF for simplicity
 #endif
 
 #if defined(PLATFORM_ESP8266)
-    Serial.begin(CRSF_RX_BAUDRATE);
+    Serial.begin(RX_BAUDRATE, RX_SERIAL_CONFIG, SERIAL_TX_ONLY, 1, true); // inverted
 #endif
 
 }
@@ -1087,9 +1106,9 @@ static void cycleRfMode()
         Serial.println(ExpressLRS_currAirRate_Modparams->interval);
         scanIndex++;
         getRFlinkInfo();
-        crsfRx.sendLinkStatisticsToFC(&channels);
+        rxMod->sendLinkStatisticsToFC(&channels);
         delay(100);
-        crsfRx.sendLinkStatisticsToFC(&channels); // need to send twice, not sure why, seems like a BF bug?
+        rxMod->sendLinkStatisticsToFC(&channels); // need to send twice, not sure why, seems like a BF bug?
         Radio.RXnb();
 
         // Switch to FAST_SYNC if not already in it (won't be if was just connected)
@@ -1163,7 +1182,7 @@ void setup()
     Radio.RXnb();
 
     PulsePort.begin(&TX_SERIAL);
-    crsfRx.begin(&PulsePort);
+    rxMod->begin(&PulsePort);
     hwTimer.init();
     hwTimer.stop();
 }
@@ -1212,8 +1231,8 @@ void loop()
         LastSyncPacket = millis();           // reset this variable to stop rf mode switching and add extra time
         RFmodeLastCycled = millis();         // reset this variable to stop rf mode switching and add extra time
         Serial.println("Air rate change req via sync");
-        crsfRx.sendLinkStatisticsToFC(&channels);
-        crsfRx.sendLinkStatisticsToFC(&channels); // need to send twice, not sure why, seems like a BF bug?
+        rxMod->sendLinkStatisticsToFC(&channels);
+        rxMod->sendLinkStatisticsToFC(&channels); // need to send twice, not sure why, seems like a BF bug?
     }
 
     if (connectionState == tentative && (uplinkLQ <= (100-(100/ExpressLRS_currAirRate_Modparams->FHSShopInterval)) || abs(OffsetDx) > 10 || Offset > 100) && (millis() > (LastSyncPacket + ExpressLRS_currAirRate_RFperfParams->RFmodeCycleAddtionalTime)))
@@ -1242,7 +1261,7 @@ void loop()
         if (connectionState != disconnected)
         {
             getRFlinkInfo();
-            crsfRx.sendLinkStatisticsToFC(&channels);
+            rxMod->sendLinkStatisticsToFC(&channels);
             SendLinkStatstoFCintervalLastSent = millis();
         }
     }
