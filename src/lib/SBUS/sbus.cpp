@@ -4,10 +4,15 @@
 
 SbusRxModule sbusRxModule;
 
+static unsigned freq_div = 0;
+
 void SbusRxModule::sendRCFrameToFC(Channels* chan)
 {
     if (!_dev) return;
 
+    if (freq_div++ & 1)
+        return;
+    
     uint8_t outBuffer[SBUS_PACKET_SIZE] = {0};
 
     outBuffer[0] = SBUS_HEADER;

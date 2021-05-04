@@ -901,7 +901,7 @@ static void setupSerial()
 #endif
 
 #if defined(PLATFORM_ESP8266)
-    Serial.begin(RX_BAUDRATE, RX_SERIAL_CONFIG);
+    Serial.begin(RX_BAUDRATE, RX_SERIAL_CONFIG, SERIAL_TX_ONLY, 1, true); // inverted
 #endif
 
 }
